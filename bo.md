@@ -1,0 +1,754 @@
+Predator–vulnerable prey spatial association.
+
+One important methodological thing to do: GBIF occurrence data cannot demonstrate true “absence” or “disappearance.” A location with no quokka records may simply be under-sampled. Therefore, the project should describe “quokka disappearance/absence” as areas of low relative occurrence intensity, rather than confirmed extinction or absence. This makes the conclusion scientifically defensible.
+
+Here is a complete version you can use as the basis for the new project.
+
+Predator–Prey Spatial Interaction Analysis: Feral Cat (Felis catus) vs. Quokka (Setonix brachyurus) in Australia
+
+Final project for Spatial Ecology in R
+
+Author: Eleonora Ramilli
+
+This project explores the spatial relationship between feral cats and quokkas across Australia using GBIF occurrence data and Spatial Point Pattern Analysis. The aim is to investigate whether areas with high relative occurrence of feral cats are associated with reduced occurrence of quokkas.
+
+Research Question
+
+Are areas with high occurrence intensity of feral cats associated with areas of low quokka occurrence in Australia?
+
+The ecological hypothesis is that feral cats may negatively affect quokkas through predation, particularly in mainland populations where quokkas are exposed to introduced predators. Therefore, we expect areas with high feral cat occurrence to show lower relative quokka occurrence.
+
+The quokka (Setonix brachyurus) has a highly restricted distribution in southwestern Western Australia, including mainland populations and several islands, while Felis catus is an introduced species occurring widely across Australia. GBIF recognizes Felis catus as introduced in Australia, while Setonix brachyurus is the accepted scientific name for the quokka. (GBIF)
+
+Data and Methodology
+
+Data was downloaded using GBIF through the rgbif package. Occurrence records for feral cats and quokkas were obtained and cleaned to ensure data integrity.
+
+Both occurrence data and Kernel Density Estimations were obtained and projected onto the Australian map. A common KDE bandwidth was used for both species so that their spatial patterns could be compared using the same spatial scale.
+
+For the coordinate system, all data was projected to an appropriate Australian metric coordinate system, allowing distance-based calculations to be performed in metres and not in degrees. (area di calcolo delle distanze? più avanti usa 50 km in kda)
+
+A log-transformation was applied to the density surfaces to handle the high variance in occurrence intensity and highlight subtle spatial patterns. The resulting surfaces were normalized between 0 and 1.
+
+Finally, a Spearman rank correlation was calculated between the two density surfaces. In addition, a density-difference map was produced to identify areas where feral cat occurrence intensity is relatively higher or lower than quokka occurrence intensity.
+
+The analysis was performed entirely in R.
+
+Packages used
+
+Here are the packages used in the project.
+
+- rgbif allows R to access GBIF servers and download occurrence records.
+- sf treats geographic data such as points and polygons as spatial objects, allowing them to be cropped, projected and transformed.
+- spatstat was used to create Point Pattern objects (ppp) and calculate Kernel Density Estimations.
+- rnaturalearth provided Australia's borders used as the observation window.
+- viridis provided colour scales designed to be accessible, including for colour-blind readers.
+- ggplot2 was used to build maps and charts.
+- patchwork was used to combine the resulting plots into a single image.
+
+\title Study Area
+
+Before loading the occurrence data, we define Australia as the study area.
+
+Because the analysis involves distance calculations and KDE bandwidths, the geographic data must be transformed from latitude and longitude into a projected coordinate system measured in metres.
+
+For a nationwide Australian analysis, GDA2020 / Australian Albers (EPSG:3577) is a suitable choice because it is designed for continental Australia and provides distances in metres.
+
+# We load the Australian map and immediately transform it into an Australian metric projection.
+
+australia <- ne_countries(
+  country = "Australia",
+  scale = "medium",
+  returnclass = "sf"
+) |>
+  st_transform(3577)
+
+# We transform the map into the observation window
+# used later for the ppp objects.
+australia_poly <- as.owin(australia)
+
+# We visualize Australia without occurrence data.
+ggplot() +
+  geom_sf(
+    data = australia,
+    fill = "#f8f9fa",
+    color = "grey80",
+    linewidth = 0.2
+  ) +
+  theme_minimal() +
+  theme(panel.grid = element_blank())
+
+
+
+
+
+Figure 1: Map of Australia without occurrence data.
+
+
+
+
+
+An important ecological feature of this study area is that the two species have very different distributions. Feral cats occur across much of Australia, whereas quokkas have a much more restricted distribution concentrated in southwestern Western Australia and several islands. GBIF's taxonomic information identifies Setonix brachyurus as the quokka and documents its restricted southwestern Australian distribution.
+
+(GBIF)
+
+
+Data Acquisition
+
+
+We retrieve occurrence data from GBIF.
+
+The two species are:
+
+Feral cat — Felis catus
+Quokka — Setonix brachyurus
+
+The GBIF taxonomic records identify Felis catus as the accepted species and list several domestic-cat synonyms.
+
+
+For the quokka, the current accepted scientific name is Setonix brachyurus.
+
+
+# Function used to download and clean species occurrence data.
+
+load_species_sf <- function(taxonKey) {
+
+  # Download occurrence records from GBIF.
+  # We require geographic coordinates and restrict
+  # the records to Australia.
+  data <- occ_search(
+    taxonKey = taxonKey,
+    country = "AU",
+    hasCoordinate = TRUE,
+    limit = 10000
+  )$data
+
+  # Keep only the columns required for the analysis.
+  data <- data[, c(
+    "decimalLongitude",
+    "decimalLatitude",
+    "scientificName"
+  )]
+
+  # Remove records without coordinates.
+  data <- data[
+    !is.na(data$decimalLongitude) &
+    !is.na(data$decimalLatitude),
+  ]
+
+  # Remove duplicated coordinates.
+  # This prevents repeated records from producing artificial
+  # density hotspots.
+  data <- data[
+    !duplicated(
+      data[, c("decimalLongitude", "decimalLatitude")]
+    ),
+  ]
+
+  # Convert the table into an sf spatial object.
+  sf_points <- st_as_sf(
+    data,
+    coords = c("decimalLongitude", "decimalLatitude"),
+    crs = 4326
+  ) |>
+    st_transform(3577)
+
+  # Keep only points occurring inside Australia.
+  return(
+    sf_points[
+      st_intersects(
+        sf_points,
+        australia,
+        sparse = FALSE
+      ),
+    ]
+  )
+}
+
+
+We then apply the function to both species.
+
+Important: use the GBIF taxon keys returned by name_backbone() rather than manually assuming a numeric key, because GBIF taxonomy identifiers can change.
+
+# Find the GBIF taxon keys.
+
+cat_taxon <- name_backbone(
+  name = "Felis catus"
+)
+
+quokka_taxon <- name_backbone(
+  name = "Setonix brachyurus"
+)
+
+cat_taxon$usageKey
+quokka_taxon$usageKey
+
+
+We can then download the data:
+
+feral_cat_sf <- load_species_sf(
+  cat_taxon$usageKey
+)
+
+quokka_sf <- load_species_sf(
+  quokka_taxon$usageKey
+)
+
+Sampling Bias
+
+An important limitation of this analysis is that GBIF data represents where observations have been recorded, rather than the true distribution or abundance of either species.
+
+This is particularly important in Australia.
+
+Human observations are not spatially uniform. Records are more likely to occur close to:
+
+roads;
+cities;
+research stations;
+national parks;
+tourist locations;
+accessible islands;
+areas where wildlife monitoring is already occurring.
+
+This can produce an apparent relationship between species that is partly caused by differences in sampling effort.
+
+There is an additional problem with the quokka data. Quokkas have a naturally restricted distribution, so large parts of Australia will contain no quokka records. These areas should not automatically be interpreted as places where quokkas have disappeared.
+
+Therefore, throughout this project, "absence" means low or zero recorded occurrence intensity in the GBIF dataset, rather than confirmed biological absence.
+
+Provare ad inserire i fossili? nn so
+
+
+Kernel Density Estimation and Normalization
+
+
+To compare the spatial distributions of the two species, we convert their discrete occurrence points into continuous density surfaces.
+
+This allows us to ask:
+
+Where is feral cat occurrence relatively high, and where is quokka occurrence relatively high?
+
+We first convert both datasets into Point Pattern objects.
+
+# Create the ppp objects.
+
+cat_ppp <- ppp(
+  st_coordinates(feral_cat_sf)[,1],
+  st_coordinates(feral_cat_sf)[,2],
+  window = australia_poly
+)
+
+quokka_ppp <- ppp(
+  st_coordinates(quokka_sf)[,1],
+  st_coordinates(quokka_sf)[,2],
+  window = australia_poly
+)
+
+
+We then calculate the KDE.
+
+Because the two species differ substantially in body size, ecology and distribution, the bandwidth should ideally be justified using the spatial scale of the question rather than simply copied from the wolf–boar project.
+
+For a directly comparable national-scale analysis, we can initially use a common 50 km bandwidth.
+
+# Kernel Density Estimation.
+# Sigma = 50 km.
+
+cat_dens <- density(
+  cat_ppp,
+  sigma = 50000,
+  dimyx = 512
+)
+
+quokka_dens <- density(
+  quokka_ppp,
+  sigma = 50000,
+  dimyx = 512
+)
+
+
+The larger bandwidth is appropriate for a continental-scale analysis because it avoids interpreting individual observations as separate ecological hotspots.
+
+However, the results should be tested with alternative bandwidths, such as 25 km and 100 km, to determine whether the spatial pattern is robust.
+
+Log Transformation and Normalization
+
+The number of observations is expected to differ considerably between the two species.
+
+Feral cats have a broad distribution and potentially many records, whereas quokka records are concentrated in a relatively small part of southwestern Australia.
+
+We therefore use the same log-normalization procedure as in the original project.
+
+apply_log_norm <- function(dens_obj) {
+
+  # Small offset to avoid log(0).
+  offset <- max(
+    dens_obj$v,
+    na.rm = TRUE
+  ) / 1000
+
+  # Log transformation.
+  dens_obj$v <- log(
+    dens_obj$v + offset
+  )
+
+  # Min-Max normalization.
+  dens_obj$v <- (
+    dens_obj$v -
+      min(dens_obj$v, na.rm = TRUE)
+  ) /
+    (
+      max(dens_obj$v, na.rm = TRUE) -
+        min(dens_obj$v, na.rm = TRUE)
+    )
+
+  return(dens_obj)
+}
+
+# Apply the transformation.
+
+cat_dens_log <- apply_log_norm(cat_dens)
+
+quokka_dens_log <- apply_log_norm(quokka_dens)
+
+
+After normalization, every pixel has a value between 0 and 1.
+
+A value close to 1 therefore means high relative occurrence intensity within that species, while a value close to 0 means low relative occurrence intensity.
+
+It is important to emphasize that these are not population densities.
+
+Plotting Functions
+
+As in the original project, functions allow us to produce standardized maps for both species.
+
+Occurrence plots
+plot_occ <- function(
+  sf_points,
+  species_label,
+  color_p
+) {
+
+  ggplot() +
+
+    # Australia background.
+    geom_sf(
+      data = australia,
+      fill = "#f8f9fa",
+      color = "grey80",
+      linewidth = 0.2
+    ) +
+
+    # Occurrence points.
+    geom_sf(
+      data = sf_points,
+      color = color_p,
+      size = 0.3,
+      alpha = 0.4
+    ) +
+
+    labs(
+      title = paste(
+        "Occurrences:",
+        species_label
+      )
+    ) +
+
+    theme_minimal() +
+    theme(
+      panel.grid = element_blank()
+    )
+}
+
+
+The low transparency prevents overplotting from hiding the spatial structure of the occurrence records.
+
+Density plots
+plot_dens <- function(
+  dens_obj,
+  species_label,
+  palette
+) {
+
+  # Convert spatstat density object
+  # into a data frame.
+  df <- as.data.frame(dens_obj)
+
+  colnames(df) <- c(
+    "x",
+    "y",
+    "value"
+  )
+
+  ggplot() +
+
+    # Australia background.
+    geom_sf(
+      data = australia,
+      fill = "#eeeeee",
+      color = NA
+    ) +
+
+    # KDE raster.
+    geom_raster(
+      data = df,
+      aes(
+        x = x,
+        y = y,
+        fill = value
+      ),
+      alpha = 0.85
+    ) +
+
+    scale_fill_viridis(
+      option = palette,
+      name = "Log Density"
+    ) +
+
+    # Australia border.
+    geom_sf(
+      data = australia,
+      fill = NA,
+      color = "white",
+      linewidth = 0.1
+    ) +
+
+    labs(
+      title = paste(
+        "KDE:",
+        species_label
+      ),
+      subtitle = "Sigma: 50 km"
+    ) +
+
+    theme_minimal() +
+    theme(
+      panel.grid = element_blank()
+    )
+}
+
+Final Layout
+
+We now create four maps:
+
+feral cat occurrences;
+feral cat KDE;
+quokka occurrences;
+quokka KDE.
+p1 <- plot_occ(
+  feral_cat_sf,
+  "Feral Cat",
+  "#440154"
+)
+
+p2 <- plot_dens(
+  cat_dens_log,
+  "Feral Cat",
+  "magma"
+)
+
+p3 <- plot_occ(
+  quokka_sf,
+  "Quokka",
+  "#35b779"
+)
+
+p4 <- plot_dens(
+  quokka_dens_log,
+  "Quokka",
+  "viridis"
+)
+
+(p1 + p2) /
+(p3 + p4)
+
+
+Figure 2: Occurrence and normalized density maps of feral cats and quokkas in Australia.
+
+The most important visual comparison should be the relationship between the two KDE maps.
+
+Unlike the wolf–boar analysis, we would not expect the two species to have similarly shaped distributions. Instead, we are interested in whether areas of high feral-cat intensity correspond to areas of low quokka intensity.
+
+Statistical Analysis
+Spearman Rank Correlation
+
+We calculate a pixel-by-pixel Spearman correlation between the two KDE surfaces.
+
+spearman_rho <- cor(
+  as.vector(cat_dens_log$v),
+  as.vector(quokka_dens_log$v),
+  method = "spearman",
+  use = "complete.obs"
+)
+
+print(
+  paste(
+    "Spearman Correlation:",
+    round(spearman_rho, 2)
+  )
+)
+
+
+The interpretation is different from the wolf–boar analysis.
+
+A positive correlation would indicate that areas with high feral-cat occurrence intensity also tend to have high quokka occurrence intensity.
+
+A negative correlation would indicate that areas with high feral-cat occurrence intensity tend to have lower quokka occurrence intensity.
+
+Therefore:
+
+$\rho > 0$ → spatial co-occurrence;
+$\rho \approx 0$ → little spatial association;
+$\rho < 0$ → spatial separation.
+
+A strongly negative value would be consistent with the hypothesis that feral-cat occurrence is associated with reduced quokka occurrence.
+
+However, this would still not demonstrate that cats caused quokka disappearance.
+
+The KDE pixels are spatially autocorrelated, meaning nearby pixels are not independent observations. Therefore, the Spearman coefficient should be interpreted as descriptive spatial evidence, rather than a conventional inferential statistical test.
+
+Density Difference Map
+
+The density difference map is particularly useful for this project.
+
+Instead of asking which species dominates the predator–prey relationship, we ask:
+
+Where is relative feral-cat occurrence higher than relative quokka occurrence?
+
+# Convert cat density into a data frame.
+
+diff_df <- as.data.frame(
+  cat_dens_log
+)
+
+colnames(diff_df) <- c(
+  "x",
+  "y",
+  "cat_val"
+)
+
+# Add quokka density values.
+diff_df$quokka_val <-
+  as.data.frame(
+    quokka_dens_log
+  )$value
+
+# Calculate the difference.
+
+diff_df$diff <-
+  diff_df$cat_val -
+  diff_df$quokka_val
+
+
+We then plot the difference.
+
+ggplot() +
+
+  geom_sf(
+    data = australia,
+    fill = "grey95",
+    color = NA
+  ) +
+
+  geom_raster(
+    data = diff_df,
+    aes(
+      x = x,
+      y = y,
+      fill = diff
+    ),
+    alpha = 0.9
+  ) +
+
+  scale_fill_viridis_c(
+    option = "mako",
+    name = "Cat - Quokka"
+  ) +
+
+  geom_sf(
+    data = australia,
+    fill = NA,
+    color = "white",
+    linewidth = 0.1
+  ) +
+
+  labs(
+    title = "Relative Spatial Intensity: Feral Cat vs Quokka",
+    subtitle =
+      "Positive = higher cat intensity | Negative = higher quokka intensity"
+  ) +
+
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank()
+  )
+
+
+Figure 3: Difference between normalized feral-cat and quokka occurrence intensity.
+
+Positive values indicate pixels where feral-cat relative occurrence is higher than quokka relative occurrence.
+
+Negative values indicate pixels where quokka relative occurrence is higher than feral-cat relative occurrence.
+
+Values close to zero indicate similar relative occurrence intensity.
+
+An important interpretation problem
+
+The difference map needs to be interpreted carefully.
+
+Australia contains enormous areas where quokkas do not naturally occur. Those areas will automatically have very low quokka density.
+
+Consequently, the difference map will probably show strong positive values across much of Australia.
+
+That does not mean that feral cats have caused quokkas to disappear from those regions.
+
+This is because the quokka's natural distribution is already geographically restricted. GBIF distribution information places the species primarily in southwestern Western Australia and on islands such as Rottnest and Bald Island.
+G
+GBIF
+
+Therefore, the most ecologically meaningful part of the analysis is the overlap zone between feral cats and quokkas, particularly mainland southwestern Western Australia.
+
+Results + Discussion
+
+The occurrence maps are expected to show a major difference between the two species.
+
+Feral cats should display a much broader distribution across Australia, reflecting their widespread establishment as an introduced species. GBIF records identify Felis catus as an introduced species in Australia.
+G
+GBIF
+
+Quokka observations, in contrast, should be strongly concentrated in southwestern Western Australia, including mainland populations and island populations.
+
+This difference creates an interesting ecological contrast.
+
+The feral cat is a widespread introduced predator, while the quokka is a geographically restricted native marsupial. The quokka's restricted distribution means that its populations are potentially exposed to several pressures simultaneously, including habitat modification, fire, introduced predators and other forms of human disturbance.
+
+The mainland populations are particularly interesting because they occur in landscapes where feral cats are also present.
+
+Island populations provide a potentially useful ecological contrast. Islands such as Rottnest Island have historically provided environments where some introduced predators are absent or more strongly controlled. Therefore, comparing mainland and island occurrence patterns could help investigate whether predator pressure may contribute to differences in quokka persistence.
+
+However, the GBIF analysis alone cannot establish this mechanism.
+
+Spatial Association
+
+The main result to investigate is the Spearman correlation.
+
+If the result is negative, it would indicate that high relative feral-cat occurrence tends to coincide spatially with low relative quokka occurrence.
+
+For example, a result such as:
+
+Spearman's $\rho = -0.35$
+
+would suggest a moderate negative spatial association.
+
+This would be compatible with the predator-pressure hypothesis, but it would not prove predation as the causal mechanism.
+
+A positive correlation, on the other hand, could occur because both species are more likely to be recorded in accessible areas, protected areas or areas with greater research effort.
+
+This is particularly important because occurrence records are not equivalent to abundance.
+
+Sampling Bias and Pseudo-Absence
+
+A major limitation of this study is the interpretation of missing quokka observations.
+
+Suppose an area contains:
+
+50 feral-cat observations;
+0 quokka observations.
+
+It would be tempting to conclude:
+
+"Quokkas have disappeared because cats are present."
+
+That conclusion would be unjustified.
+
+The correct interpretation is:
+
+"This area has high recorded feral-cat occurrence and no recorded quokka occurrence in the GBIF dataset."
+
+There are several possible explanations:
+
+quokkas are genuinely absent;
+quokkas were historically present but disappeared;
+quokkas are present but rare;
+nobody has sampled the area for quokkas;
+GBIF contains insufficient observations from the area.
+
+Therefore, absence should be treated as pseudo-absence rather than confirmed biological absence.
+
+A Better Test of the Hypothesis
+
+The strongest improvement to this project would be to restrict the statistical analysis to the known or historical quokka range, rather than correlating the two species across the whole Australian continent.
+
+For example, the analysis could focus on southwestern Western Australia.
+
+This would answer a much more meaningful question:
+
+Within the landscape where quokkas occur or historically occurred, are areas of higher feral-cat occurrence associated with lower quokka occurrence?
+
+This removes much of the problem caused by comparing cats across Australia with quokkas that naturally occupy only a tiny fraction of the continent.
+
+The project could therefore have two scales:
+
+Continental scale
+
+Question: How do the broad distributions of feral cats and quokkas differ across Australia?
+
+Quokka-range scale
+
+Question: Within the quokka's distribution, is feral-cat occurrence negatively associated with quokka occurrence?
+
+The second question is the stronger ecological test.
+
+Optional Improved Analysis: Mainland vs Islands
+
+An especially interesting extension would be to separate quokka records into:
+
+mainland Western Australia;
+Rottnest Island;
+Bald Island;
+other islands where records occur.
+
+The hypothesis could then become:
+
+Are quokka populations on islands characterized by lower feral-cat occurrence than mainland populations?
+
+This would be much closer to a test of the idea that predator release contributes to quokka persistence.
+
+The analysis could produce separate KDEs for:
+
+Feral cats – mainland
+Quokkas – mainland
+
+Feral cats – islands
+Quokkas – islands
+
+
+and compare their relative occurrence intensities.
+
+This would also avoid treating the entire Australian continent as an ecologically homogeneous study area.
+
+Conclusion
+
+This project investigates the spatial relationship between feral cats and quokkas in Australia using GBIF occurrence data and Kernel Density Estimation.
+
+Feral cats have a widespread distribution across Australia, whereas quokkas have a much more restricted distribution, concentrated in southwestern Western Australia and several islands.
+G
+GBIF
++1
+
+The KDE approach allows these two very different occurrence datasets to be converted into comparable spatial intensity surfaces.
+
+The main hypothesis is that areas with high feral-cat occurrence intensity should show lower quokka occurrence intensity. A negative Spearman correlation would provide descriptive spatial support for this hypothesis.
+
+However, the analysis cannot demonstrate a causal predator–prey relationship. GBIF data is opportunistic and affected by sampling bias, and an absence of quokka records cannot be interpreted as confirmed absence.
+
+The density difference map provides a useful visualization of where feral cats have relatively greater occurrence intensity than quokkas, but it must also be interpreted in the context of the quokka's naturally restricted range.
+
+Therefore, the strongest conclusion would be:
+
+A negative spatial association between feral cats and quokkas would be consistent with the hypothesis that feral-cat presence may contribute to reduced quokka occurrence, but GBIF occurrence data alone cannot establish causation or confirm local quokka disappearance.
+
+For a stronger ecological analysis, the next step would be to restrict the comparison to southwestern Western Australia and explicitly compare mainland versus island quokka populations. That would turn the project from a broad descriptive comparison into a much more convincing spatial-ecology investigation.
+
+G
+Sources
