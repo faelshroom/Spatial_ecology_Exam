@@ -1,5 +1,3 @@
-# Spatial_ecology_Exam
-
 # Predator– vulnerable Prey Spatial Interaction Analysis: Feral Cat (Felis catus) vs. Quokka (Setonix brachyurus) in Australia
 
 Final project of Spatial Ecology in R
@@ -33,12 +31,12 @@ The analysis was performed entirely in R.
 
 Here are the packages used in the project.
 
-- "rgbif" allows R to access GBIF servers and download occurrence records.
-- "sf" treats geographic data such as points and polygons as spatial objects, allowing them to be cropped, projected and transformed.
-- "spatstat" was used to create Point Pattern objects (ppp) and calculate Kernel Density Estimations.
-- "rnaturalearth" provided Australia's borders used as the observation window.
-- "viridis" provided colour scales designed to be accessible, including for colour-blind readers.
-- "ggplot2" was used to build maps and charts.
+- `rgbif` allows R to access GBIF servers and download occurrence records.
+- `sf` treats geographic data such as points and polygons as spatial objects, allowing them to be cropped, projected and transformed.
+- `spatstat` was used to create Point Pattern objects (ppp) and calculate Kernel Density Estimations.
+- `rnaturalearth` provided Australia's borders used as the observation window.
+- `viridis` provided colour scales designed to be accessible, including for colour-blind readers.
+- `ggplot2` was used to build maps and charts.
 
 ## Study Area
 
@@ -604,12 +602,7 @@ The mainland populations are particularly interesting because they occur in land
 
 Island populations provide a potentially useful ecological contrast. Islands such as Rottnest Island have historically provided environments where some introduced predators are absent or more strongly controlled. Therefore, comparing mainland and island occurrence patterns could help investigate whether predator pressure may contribute to differences in quokka persistence.
 
-
-
-
-
-Therefore, absence should be treated as pseudo-absence rather than confirmed biological absence.
-
+Spearman: Spearman Correlation: 0.37
 
 # Conclusion
 
