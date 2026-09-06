@@ -39,7 +39,6 @@ Here are the packages used in the project.
 - "rnaturalearth" provided Australia's borders used as the observation window.
 - "viridis" provided colour scales designed to be accessible, including for colour-blind readers.
 - "ggplot2" was used to build maps and charts.
-\\ - "patchwork" was used to combine the resulting plots into a single image.
 
 ## Study Area
 
