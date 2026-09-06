@@ -80,9 +80,9 @@ ggplot() +
 ```
 
 
-<img width="290" height="391" alt="1ec627ab-d6c1-4833-9a33-98daa2cbfcf7" src="https://github.com/user-attachments/assets/cc24aa7f-398e-4d25-b0f2-b0d8610bf337" />
+![Australia](australia blank.png)
 
-<small>*Figure 1: Map of Australia without occurrence data.
+<small>Figure 1: Map of Australia without occurrence data.
 
 
 
