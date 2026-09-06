@@ -251,6 +251,7 @@ The number of observations is expected to differ considerably between the two sp
 Feral cats have a broad distribution and potentially many records, whereas quokka records are concentrated in a relatively small part of southwestern Australia.
 
 The normalization performed is a Min-Max normalization, performed using the formula:
+
 $$x_{norm}=\frac{x-min(x)}{max(x)-min(x)}$$ 
 
 ```R
@@ -406,11 +407,9 @@ plot_dens <- function(
 
 # Final Layout
 
-We now create the four maps:feral cat occurrences;
-feral cat KDE;
-quokka occurrences;
-quokka KDE.
-```
+We now create the four maps:
+
+```R
 p1 <- plot_occ(
   feral_cat_sf,
   "Feral Cat",
@@ -440,10 +439,13 @@ p2
 p3 
 p4
 ```
-![map1](occ-feral-cat)
-![map2](kde-cat)
-![map3](occ-quokka)
-![map4](kde-quokka)
+![map1](occ-feral-cat.png)
+
+![map2](kde-cat.png)
+
+![map3](occ-quokka.png)
+
+![map4](kde-quokka.png)
 
 <small> *Figure: Occurrence and normalized density maps of feral cats and quokkas in Australia.*
 
@@ -571,7 +573,7 @@ ggplot() +
     panel.grid = element_blank()
   )
 ```
-![map_final](relative-spatial-int)
+![map_final](relative-spatial-int.png)
 
 Figure 3: Difference between normalized feral-cat and quokka occurrence intensity.
 
