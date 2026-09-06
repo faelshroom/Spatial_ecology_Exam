@@ -5,56 +5,56 @@
 
 # Predator– vulnerable Prey Spatial Interaction Analysis: Feral Cat (Felis catus) vs. Quokka (Setonix brachyurus) in Australia
 
-Final project for Spatial Ecology in R
+Final project of Spatial Ecology in R
 
 Author: Eleonora Ramilli
 
 This project explores the spatial relationship between feral cats and quokkas across Australia using GBIF occurrence data and Spatial Point Pattern Analysis. The aim is to investigate whether areas with high relative occurrence of feral cats are associated with reduced occurrence of quokkas.
 
-Research Question:
+## Research Question:
 
 Are areas with high occurrence intensity of feral cats associated with areas of low quokka occurrence in Australia?
 
 The ecological hypothesis is that feral cats may negatively affect quokkas through predation, particularly in mainland populations where quokkas are exposed to introduced predators. Therefore, we expect areas with high feral cat occurrence to show lower relative quokka occurrence.
 
-The quokka (Setonix brachyurus) has a highly restricted distribution in southwestern Western Australia, including mainland populations and several islands, while Felis catus is an introduced species occurring widely across Australia. GBIF recognizes Felis catus as introduced in Australia, while Setonix brachyurus is the accepted scientific name for the quokka. (GBIF)
+The quokka (Setonix brachyurus) has a highly restricted distribution in southwestern Western Australia, including mainland populations and several islands, while Felis catus is an introduced species occurring widely across Australia. GBIF recognizes Felis catus as introduced in Australia, while Setonix brachyurus is the accepted scientific name for the quokka.
 
-Data and Methodology
+# Data and Methodology
 
 Data was downloaded using GBIF through the rgbif package. Occurrence records for feral cats and quokkas were obtained and cleaned to ensure data integrity.
 
 Both occurrence data and Kernel Density Estimations were obtained and projected onto the Australian map. A common KDE bandwidth was used for both species so that their spatial patterns could be compared using the same spatial scale.
 
-For the coordinate system, all data was projected to an appropriate Australian metric coordinate system, allowing distance-based calculations to be performed in metres and not in degrees. (area di calcolo delle distanze? più avanti usa 50 km in kda)
-
+For the coordinate system, all data was projected to an appropriate Australian metric coordinate system, allowing distance-based calculations to be performed in metres and not in degrees.
 A log-transformation was applied to the density surfaces to handle the high variance in occurrence intensity and highlight subtle spatial patterns. The resulting surfaces were normalized between 0 and 1.
 
 Finally, a Spearman rank correlation was calculated between the two density surfaces. In addition, a density-difference map was produced to identify areas where feral cat occurrence intensity is relatively higher or lower than quokka occurrence intensity.
 
 The analysis was performed entirely in R.
 
-Packages used
+## Packages used
 
 Here are the packages used in the project.
 
-- rgbif allows R to access GBIF servers and download occurrence records.
-- sf treats geographic data such as points and polygons as spatial objects, allowing them to be cropped, projected and transformed.
-- spatstat was used to create Point Pattern objects (ppp) and calculate Kernel Density Estimations.
-- rnaturalearth provided Australia's borders used as the observation window.
-- viridis provided colour scales designed to be accessible, including for colour-blind readers.
-- ggplot2 was used to build maps and charts.
-- patchwork was used to combine the resulting plots into a single image.
+- "rgbif" allows R to access GBIF servers and download occurrence records.
+- "sf" treats geographic data such as points and polygons as spatial objects, allowing them to be cropped, projected and transformed.
+- "spatstat" was used to create Point Pattern objects (ppp) and calculate Kernel Density Estimations.
+- "rnaturalearth" provided Australia's borders used as the observation window.
+- "viridis" provided colour scales designed to be accessible, including for colour-blind readers.
+- "ggplot2" was used to build maps and charts.
+\\ - "patchwork" was used to combine the resulting plots into a single image.
 
-Study Area
+## Study Area
 
 Before loading the occurrence data, we define Australia as the study area.
 
 Because the analysis involves distance calculations and KDE bandwidths, the geographic data must be transformed from latitude and longitude into a projected coordinate system measured in metres.
 
-For a nationwide Australian analysis, GDA2020 / Australian Albers (EPSG:3577) is a suitable choice because it is designed for continental Australia and provides distances in metres.
+For a nationwide Australian analysis, GDA2020 / Australian Albers (EPSG:3577) is the most suitable choice because it is designed for continental Australia and provides distances in metres.
 
-# We load the Australian map and immediately transform it into an Australian metric projection.
+We load the Australian map and immediately transform it into an Australian metric projection.
 
+```R  ???
 australia <- ne_countries(
   country = "Australia",
   scale = "medium",
@@ -77,23 +77,18 @@ ggplot() +
   theme_minimal() +
   theme(panel.grid = element_blank())
 
+```
 
 
+<img width="290" height="391" alt="1ec627ab-d6c1-4833-9a33-98daa2cbfcf7" src="https://github.com/user-attachments/assets/cc24aa7f-398e-4d25-b0f2-b0d8610bf337" />
 
-
-Figure 1: Map of Australia without occurrence data.
-
-
+<small>*Figure 1: Map of Australia without occurrence data.
 
 
 
 An important ecological feature of this study area is that the two species have very different distributions. Feral cats occur across much of Australia, whereas quokkas have a much more restricted distribution concentrated in southwestern Western Australia and several islands. GBIF's taxonomic information identifies Setonix brachyurus as the quokka and documents its restricted southwestern Australian distribution.
 
-(GBIF)
-
-
-Data Acquisition
-
+## Data Acquisition
 
 We retrieve occurrence data from GBIF.
 
@@ -107,37 +102,37 @@ The GBIF taxonomic records identify Felis catus as the accepted species and list
 
 For the quokka, the current accepted scientific name is Setonix brachyurus.
 
-
-# Function used to download and clean species occurrence data.
+```R
+#Function used to download and clean species occurrence data.
 
 load_species_sf <- function(taxonKey) {
 
-  # Download occurrence records from GBIF.
-  # We require geographic coordinates and restrict
-  # the records to Australia.
-  data <- occ_search(
-    taxonKey = taxonKey,
-    country = "AU",
-    hasCoordinate = TRUE,
-    limit = 10000
-  )$data
+# Download occurrence records from GBIF.
+# We require geographic coordinates and restrict
+# the records to Australia.
 
-  # Keep only the columns required for the analysis.
+data <- occ_search(
+  taxonKey = taxonKey,
+  country = "AU",
+  hasCoordinate = TRUE,
+  limit = 10000
+)$data
+
+# Keep only the columns required for the analysis.
   data <- data[, c(
     "decimalLongitude",
     "decimalLatitude",
     "scientificName"
   )]
 
-  # Remove records without coordinates.
+# Remove records without coordinates.
   data <- data[
     !is.na(data$decimalLongitude) &
     !is.na(data$decimalLatitude),
   ]
 
-  # Remove duplicated coordinates.
-  # This prevents repeated records from producing artificial
-  # density hotspots.
+# Remove duplicated coordinates.
+# This prevents repeated records from producing artificial density hotspots.
   data <- data[
     !duplicated(
       data[, c("decimalLongitude", "decimalLatitude")]
@@ -164,12 +159,13 @@ load_species_sf <- function(taxonKey) {
   )
 }
 
-
+```
 We then apply the function to both species.
 
-Important: use the GBIF taxon keys returned by name_backbone() rather than manually assuming a numeric key, because GBIF taxonomy identifiers can change.
+Important: it was decided to use the GBIF taxon keys returned by name_backbone() rather than manually assuming a numeric key, as GBIF taxonomy identifiers can change.
 
-# Find the GBIF taxon keys.
+```R
+# We find the GBIF taxon keys.
 
 cat_taxon <- name_backbone(
   name = "Felis catus"
@@ -181,10 +177,10 @@ quokka_taxon <- name_backbone(
 
 cat_taxon$usageKey
 quokka_taxon$usageKey
-
+```
 
 We can then download the data:
-
+```R
 feral_cat_sf <- load_species_sf(
   cat_taxon$usageKey
 )
@@ -192,33 +188,21 @@ feral_cat_sf <- load_species_sf(
 quokka_sf <- load_species_sf(
   quokka_taxon$usageKey
 )
-
-Sampling Bias
+```
+## Sampling Bias
 
 An important limitation of this analysis is that GBIF data represents where observations have been recorded, rather than the true distribution or abundance of either species.
-
 This is particularly important in Australia.
-
-Human observations are not spatially uniform. Records are more likely to occur close to:
-
-roads;
-cities;
-research stations;
-national parks;
-tourist locations;
-accessible islands;
-areas where wildlife monitoring is already occurring.
+Human observations are not spatially uniform. Records are more likely to occur close to places inhabited by humans like roads, cities, research stations, national parks, tourist locations, accessible islands and areas where wildlife monitoring is already occurring.
 
 This can produce an apparent relationship between species that is partly caused by differences in sampling effort.
 
-There is an additional problem with the quokka data. Quokkas have a naturally restricted distribution, so large parts of Australia will contain no quokka records. These areas should not automatically be interpreted as places where quokkas have disappeared.
+There is an additional problem with the quokka data. Quokkas have a naturally restricted distribution, so large parts of Australia will contain no quokka records. Therefore, these areas should not automatically be interpreted as places where quokkas have disappeared.
 
-Therefore, throughout this project, "absence" means low or zero recorded occurrence intensity in the GBIF dataset, rather than confirmed biological absence.
-
-Provare ad inserire i fossili? nn so
+So, throughout this project, "absence" means low or zero recorded occurrence intensity in the GBIF dataset, rather than confirmed biological absence.
 
 
-Kernel Density Estimation and Normalization
+## Kernel Density Estimation and Normalization
 
 
 To compare the spatial distributions of the two species, we convert their discrete occurrence points into continuous density surfaces.
