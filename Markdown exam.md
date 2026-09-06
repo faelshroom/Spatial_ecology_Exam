@@ -54,7 +54,7 @@ For a nationwide Australian analysis, GDA2020 / Australian Albers (EPSG:3577) is
 
 We load the Australian map and immediately transform it into an Australian metric projection.
 
-```R  ???
+```R 
 australia <- ne_countries(
   country = "Australia",
   scale = "medium",
@@ -192,29 +192,22 @@ quokka_sf <- load_species_sf(
 ## Sampling Bias
 
 An important limitation of this analysis is that GBIF data represents where observations have been recorded, rather than the true distribution or abundance of either species.
-This is particularly important in Australia.
-Human observations are not spatially uniform. Records are more likely to occur close to places inhabited by humans like roads, cities, research stations, national parks, tourist locations, accessible islands and areas where wildlife monitoring is already occurring.
-
-This can produce an apparent relationship between species that is partly caused by differences in sampling effort.
-
-There is an additional problem with the quokka data. Quokkas have a naturally restricted distribution, so large parts of Australia will contain no quokka records. Therefore, these areas should not automatically be interpreted as places where quokkas have disappeared.
+This is particularly important in Australia. Human observations are not spatially uniform. Records are more likely to occur close to places inhabited by humans like roads, cities, research stations, national parks, tourist locations, accessible islands and areas where wildlife monitoring is already occurring.
+Quokkas have a naturally restricted distribution, so large parts of Australia will contain no quokka records at all. Therefore, these areas should not automatically be interpreted as places where quokkas have disappeared.
 
 So, throughout this project, "absence" means low or zero recorded occurrence intensity in the GBIF dataset, rather than confirmed biological absence.
+This is not a problem though, as the aim of the project is to prove that feral cats are, as already known, a threat for this native species.
 
 
 ## Kernel Density Estimation and Normalization
 
-
 To compare the spatial distributions of the two species, we convert their discrete occurrence points into continuous density surfaces.
 
-This allows us to ask:
-
-Where is feral cat occurrence relatively high, and where is quokka occurrence relatively high?
-
+This allows us to understand where is feral cat occurrence relatively high, and where is quokka occurrence relatively high.
 We first convert both datasets into Point Pattern objects.
-
-# Create the ppp objects.
-
+This is required by the `spatstat` package that links the occurrence points to our defined geographic window which is Australia
+```R
+# Creation of the ppp objects, we extract X and Y coordinates in meters from the spatial object, 1 being the longitude and 2 the latitude.
 cat_ppp <- ppp(
   st_coordinates(feral_cat_sf)[,1],
   st_coordinates(feral_cat_sf)[,2],
@@ -227,16 +220,15 @@ quokka_ppp <- ppp(
   window = australia_poly
 )
 
-
+```
 We then calculate the KDE.
-
 Because the two species differ substantially in body size, ecology and distribution, the bandwidth should ideally be justified using the spatial scale of the question.
-
 For a directly comparable national-scale analysis, we can initially use a common 50 km bandwidth.
 
+```R
 # Kernel Density Estimation.
 # Sigma = 50 km.
-
+`dimyx` is set to 512 to create a high resolution grid for the final maps. 
 cat_dens <- density(
   cat_ppp,
   sigma = 50000,
@@ -248,23 +240,24 @@ quokka_dens <- density(
   sigma = 50000,
   dimyx = 512
 )
+```
+The large bandwidth is appropriate for a continental-scale analysis because it avoids interpreting individual observations as separate ecological hotspots.
 
+## Log Transformation and Normalization
 
-The larger bandwidth is appropriate for a continental-scale analysis because it avoids interpreting individual observations as separate ecological hotspots.
-
-However, the results should be tested with alternative bandwidths, such as 25 km and 100 km, to determine whether the spatial pattern is robust.
-
-Log Transformation and Normalization
+Species occurrence data is often highly skewed, with a few areas having massive numbers of sightings while most have very few. To account for this and compare both datasets fairly, we created the function `apply_log_norm`, that performs a logarithmic transformation. This makes subtle patterns in lower-density areas more visible alongside high-density hotspots. This function also normalizes the data, scaling the values between 0 and 1. 
 
 The number of observations is expected to differ considerably between the two species.
 
 Feral cats have a broad distribution and potentially many records, whereas quokka records are concentrated in a relatively small part of southwestern Australia.
 
-We therefore use the same log-normalization procedure as in the original project.
+The normalization performed is a Min-Max normalization, performed using the formula:
+spazio x formula
 
+```R
 apply_log_norm <- function(dens_obj) {
 
-  # Small offset to avoid log(0).
+# Small offset to avoid log(0).
   offset <- max(
     dens_obj$v,
     na.rm = TRUE
@@ -294,19 +287,18 @@ cat_dens_log <- apply_log_norm(cat_dens)
 
 quokka_dens_log <- apply_log_norm(quokka_dens)
 
-
-After normalization, every pixel has a value between 0 and 1.
-
+```
+Now, every pixel has a value between 0 and 1.
 A value close to 1 therefore means high relative occurrence intensity within that species, while a value close to 0 means low relative occurrence intensity.
 
 It is important to emphasize that these are not population densities.
 
-Plotting Functions
+## Plotting Functions
+Functions are used to guarantee that both species' maps have the exact same criteria used. It's also efficient, we can generate all four maps with lesser lines of code. 
+## Occurrence plots
 
-As in the original project, functions allow us to produce standardized maps for both species.
-
-Occurrence plots
-
+The `plot_occ` function is used to plot the individual occurrence points, so raw GBIF data, over Australia. We set `size = 0.3` and `alpha = 0.4`. Using a low alpha (transparency) is crucial; it prevents "overplotting" where points stack on top of each other, allowing us to see where sightings are most densely clustered.
+```R
 plot_occ <- function(
   sf_points,
   species_label,
@@ -315,7 +307,7 @@ plot_occ <- function(
 
   ggplot() +
 
-    # Australia background.
+# Australia background.
     geom_sf(
       data = australia,
       fill = "#f8f9fa",
@@ -343,7 +335,7 @@ plot_occ <- function(
       panel.grid = element_blank()
     )
 }
-
+```
 
 The low transparency prevents overplotting from hiding the spatial structure of the occurrence records.
 
