@@ -228,7 +228,7 @@ For a directly comparable national-scale analysis, we can use a common 50 km ban
 ```R
 # Kernel Density Estimation.
 # Sigma = 50 km.
-`dimyx` is set to 512 to create a high resolution grid for the final maps. 
+#`dimyx` is set to 512 to create a high resolution grid for the final maps. 
 cat_dens <- density(
   cat_ppp,
   sigma = 50000,
