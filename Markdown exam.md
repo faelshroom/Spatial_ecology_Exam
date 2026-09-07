@@ -350,7 +350,7 @@ plot_dens <- function(
   # Convert spatstat density object
   # into a data frame.
   df <- as.data.frame(dens_obj)
-
+  #We put names onto the columns.
   colnames(df) <- c(
     "x",
     "y",
@@ -359,14 +359,14 @@ plot_dens <- function(
 
   ggplot() +
 
-    # Australia background.
+    # We first create the map of Australia, filled with a light grey, acting as a background, so areas with zero density still look like part of the country.
     geom_sf(
       data = australia,
       fill = "#eeeeee",
       color = NA
     ) +
 
-    # KDE raster.
+    #We then draw our grid of pixels, the aes function tells R that the color of the pixel should be determined by the density number (0 to 1). Alpha is at 85% so it's still possible to see the map.
     geom_raster(
       data = df,
       aes(
@@ -376,13 +376,13 @@ plot_dens <- function(
       ),
       alpha = 0.85
     ) +
-
+    #We set our viridis color palette
     scale_fill_viridis(
       option = palette,
       name = "Log Density"
     ) +
 
-    # Australia border.
+    # We draw the Australia borders, but this time filling NA, just putting the outline on top of the heatmap so the borders look sharp.
     geom_sf(
       data = australia,
       fill = NA,
@@ -397,7 +397,7 @@ plot_dens <- function(
       ),
       subtitle = "Sigma: 50 km"
     ) +
-
+    #We remove the default grey backgorund and grid lines of R, making the map look cleaner. 
     theme_minimal() +
     theme(
       panel.grid = element_blank()
