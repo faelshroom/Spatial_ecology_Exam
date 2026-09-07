@@ -1,4 +1,4 @@
-# Predator– vulnerable Prey Spatial Interaction Analysis: Feral Cat (Felis catus) vs. Quokka (Setonix brachyurus) in Australia
+# Predator - vulnerable Prey Spatial Interaction Analysis: Feral Cat (Felis catus) vs. Quokka (Setonix brachyurus) in Australia
 
 Final project of Spatial Ecology in R
 
@@ -88,9 +88,9 @@ We retrieve occurrence data from GBIF.
 
 The two species are:
 
-Feral cat — Felis catus 
+Feral cat - Felis catus 
 
-Quokka — Setonix brachyurus
+Quokka - Setonix brachyurus
 
 The GBIF taxonomic records identify Felis catus as the accepted species and list several domestic-cat synonyms.
 
