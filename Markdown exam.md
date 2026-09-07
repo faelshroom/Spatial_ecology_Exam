@@ -449,9 +449,7 @@ p4
 
 <small> *Figure: Occurrence and normalized density maps of feral cats and quokkas in Australia.*
 
-The most important visual comparison is the relationship between the two KDE maps.
-
-We are interested in whether areas of high feral-cat intensity correspond to areas of low quokka intensity.
+The most important visual comparison is the relationship between the two KDE maps. We are interested in whether areas of high feral-cat intensity correspond to areas of low quokka intensity.
 
 ## Statistical Analysis
 
@@ -481,7 +479,6 @@ print(
 )
 ```
 
-
 A positive correlation indicates that areas with high feral-cat occurrence intensity also tend to have high quokka occurrence intensity.
 
 A negative correlation indicates that areas with high feral-cat occurrence intensity tend to have lower quokka occurrence intensity.
@@ -493,7 +490,6 @@ $\rho \approx 0$ → little spatial association;
 $\rho < 0$ → spatial separation.
 ```
 A strongly negative value would be consistent with the hypothesis that feral-cat occurrence is associated with reduced quokka occurrence.
-
 The KDE pixels are spatially autocorrelated, meaning nearby pixels are not independent observations. Therefore, the Spearman coefficient should be interpreted as descriptive spatial evidence, rather than a conventional inferential statistical test.
 
 ## Density Difference Map
@@ -583,9 +579,9 @@ Negative values indicate pixels where quokka relative occurrence is higher than 
 
 Values close to zero indicate similar relative occurrence intensity.
 
-The difference map needs to be interpreted carefully, australia contains enormous areas where quokkas do not naturally occur. Those areas will automatically have very low quokka density.
+The difference map needs to be interpreted carefully, as Australia contains enormous areas where quokkas do not naturally occur. Those areas will automatically have very low quokka density.
 
-This is because the quokka's natural distribution is already geographically restricted. GBIF distribution information places the species primarily in southwestern Western Australia and on islands such as Rottnest and Bald Island.
+This is because the quokka's natural distribution is already geographically restricted. GBIF distribution information places the species primarily in southwestern Western Australia and on islands such as Rottnest and Bald Island. We have also chosen not to
 
 Therefore, the most ecologically meaningful part of the analysis is the overlap zone between feral cats and quokkas, particularly mainland southwestern Western Australia.
 
@@ -605,21 +601,22 @@ The mainland populations are particularly interesting because they occur in land
 
 Island populations provide a potentially useful ecological contrast. Islands such as Rottnest Island have historically provided environments where some introduced predators are absent or more strongly controlled. Therefore, comparing mainland and island occurrence patterns could help investigate whether predator pressure may contribute to differences in quokka persistence.
 
-Spearman: Spearman Correlation: 0.37
+
+### Density difference map and Spearman
+
+The Spearman Correlation is of ( ρ )=0.37, which shows not a very strong correlation between the two distributions. This is mainly due to the already seen aspect that the two animlas have very different distributions in the country, but, in the areas where they both are present, we can actually see a pressure that the predator puts on the quokkas, making it vary likely that the feral cats have a big space on the pressure the quokkas endure in their environment.
+
+However, because KDE-derived raster values are spatially autocorrelated, the correlation should be interpreted descriptively. Spearman assumes that observations are independent, but our pixels are not, so they are pseudo replicates of nearby space. Thus, the correlation magnitude is probably artificially inflated, our result can be taken as a pattern or a descriptive interpretation but not a real statistical inference.
 
 # Conclusion
 
 This project investigates the spatial relationship between feral cats and quokkas in Australia using GBIF occurrence data and Kernel Density Estimation.
+Thanks to the statistical analysis performed and the distribution of the two animals with the KDE, we can see that the two animals are mainly very different in their environments of choice, but we cannot ignore the area of correlation where there are both animals present, in the south-western area.
 
-Feral cats have a widespread distribution across Australia, whereas quokkas have a much more restricted distribution, concentrated in southwestern Western Australia and several islands.
+Feral cats have a widespread distribution across Australia, whereas quokkas have a much more restricted distribution, concentrated in southwestern Australia and several islands, making it possible that the feral cats have not only a strong ecological niche, but also that they actually can represent a threat for the other species, especially being that they are an introduced predator.
 
-The KDE approach allows these two very different occurrence datasets to be converted into comparable spatial intensity surfaces.
-
-The main hypothesis is that areas with high feral-cat occurrence intensity should show lower quokka occurrence intensity. A negative Spearman correlation would provide descriptive spatial support for this hypothesis.
-
-However, the analysis cannot demonstrate a causal predator–prey relationship. GBIF data is opportunistic and affected by sampling bias, and an absence of quokka records cannot be interpreted as confirmed absence.
+However, the analysis cannot fully demonstrate a causal predator–prey relationship. GBIF data is opportunistic and affected by sampling bias.
 
 The density difference map provides a useful visualization of where feral cats have relatively greater occurrence intensity than quokkas, but it must also be interpreted in the context of the quokka's naturally restricted range.
 
-Therefore, the strongest conclusion is that a negative spatial association between feral cats and quokkas would be consistent with the hypothesis that feral-cat presence may contribute to reduced quokka occurrence, but GBIF occurrence data alone cannot establish causation or confirm local quokka disappearance.
-
+Therefore, the strongest conclusion is that a negative spatial association between feral cats and quokkas is consistent with the hypothesis that feral-cat presence may contribute to reduced quokka occurrence.
