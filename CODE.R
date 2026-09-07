@@ -2,7 +2,7 @@
 
 - library("sf") #To transform data frames into spatial objects, and other useful functions.
 
-- library("spatstat") #To calculate KDE and ppp. \Lcross??
+- library("spatstat") #To calculate KDE and ppp.
 
 - library("viridis") #To use color-blind friendly color palettes in the plots.
 
