@@ -85,18 +85,12 @@ An important ecological feature of this study area is that the two species have 
 ## Data Acquisition
 
 We retrieve occurrence data from GBIF.
-
 The two species are:
-
 Feral cat - Felis catus 
-
 Quokka - Setonix brachyurus
-
 The GBIF taxonomic records identify Felis catus as the accepted species and list several domestic-cat synonyms.
-
-
 For the quokka, the current accepted scientific name is Setonix brachyurus.
-
+We also ensure that no NA values are present in our data, and that all our points intersect with the Australian border (no points outside our study area). 
 ```R
 #Function used to download and clean species occurrence data.
 
