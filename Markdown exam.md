@@ -6,7 +6,7 @@ Final project of Spatial Ecology in R
 
 Author: Eleonora Ramilli
 
-This project explores the spatial relationship between feral cats and quokkas across Australia using GBIF occurrence data and Spatial Point Pattern Analysis. The aim is to investigate whether areas with high relative occurrence of feral cats are associated with reduced occurrence of quokkas.
+This project explores the spatial relationship between feral cats and quokkas across Australia using GBIF occurrence data and Spatial Point Pattern Analysis. The aim is to investigate whether areas with high relative occurrence of feral cats are associated with reduced occurrence of quokkas and wheter these animals can be a threat for the populations of native species in a very limited part of the world.
 
 ## Research Question:
 
