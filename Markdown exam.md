@@ -571,7 +571,7 @@ ggplot() +
 ```
 ![map_final](relative-spatial-int.png)
 
-Figure 3: Difference between normalized feral-cat and quokka occurrence intensity.
+Figure 3: *Difference between normalized feral-cat and quokka occurrence intensity.*
 
 Positive values indicate pixels where feral-cat relative occurrence is higher than quokka relative occurrence.
 
