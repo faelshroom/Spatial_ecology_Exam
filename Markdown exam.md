@@ -1,3 +1,5 @@
+![copertina](copertina.jpg)
+
 # Predator - vulnerable Prey Spatial Interaction Analysis: Feral Cat (Felis catus) vs. Quokka (Setonix brachyurus) in Australia
 
 Final project of Spatial Ecology in R
