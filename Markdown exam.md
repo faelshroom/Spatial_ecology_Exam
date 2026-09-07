@@ -76,7 +76,7 @@ ggplot() +
 
 ![Australia](australia-blank.png)
 
-<small>Figure 1: Map of Australia without occurrence data.
+<small> *Figure 1: Map of Australia without occurrence data.*
 
 
 
@@ -86,8 +86,11 @@ An important ecological feature of this study area is that the two species have 
 
 We retrieve occurrence data from GBIF.
 The two species are:
+
 Feral cat - Felis catus 
+
 Quokka - Setonix brachyurus
+
 The GBIF taxonomic records identify Felis catus as the accepted species and list several domestic-cat synonyms.
 For the quokka, the current accepted scientific name is Setonix brachyurus.
 We also ensure that no NA values are present in our data, and that all our points intersect with the Australian border (no points outside our study area). 
@@ -169,6 +172,7 @@ quokka_taxon$usageKey
 ```
 
 We can then download the data:
+
 ```R
 feral_cat_sf <- load_species_sf(
   cat_taxon$usageKey
@@ -181,6 +185,7 @@ quokka_sf <- load_species_sf(
 ## Sampling Bias
 
 An important limitation of this analysis is that GBIF data represents where observations have been recorded, rather than the true distribution or abundance of either species.
+
 This is particularly important in Australia. Human observations are not spatially uniform. Records are more likely to occur close to places inhabited by humans like roads, cities, research stations, national parks, tourist locations, accessible islands and areas where wildlife monitoring is already occurring.
 Quokkas have a naturally restricted distribution, so large parts of Australia will contain no quokka records at all. Therefore, these areas should not automatically be interpreted as places where quokkas have disappeared.
 
@@ -193,7 +198,9 @@ This is not a problem though, as the aim of the project is to prove that feral c
 To compare the spatial distributions of the two species, we convert their discrete occurrence points into continuous density surfaces.
 
 This allows us to understand where is feral cat occurrence relatively high, and where is quokka occurrence relatively high.
+
 We first convert both datasets into Point Pattern objects.
+
 This is required by the `spatstat` package that links the occurrence points to our defined geographic window which is Australia
 
 ```R
@@ -212,8 +219,9 @@ quokka_ppp <- ppp(
 
 ```
 We then calculate the KDE.
+
 Because the two species differ substantially in body size, ecology and distribution, the bandwidth should ideally be justified using the spatial scale of the question.
-For a directly comparable national-scale analysis, we can initially use a common 50 km bandwidth.
+For a directly comparable national-scale analysis, we can use a common 50 km bandwidth.
 
 ```R
 # Kernel Density Estimation.
@@ -286,7 +294,7 @@ It is important to emphasize that these are not population densities.
 
 ## Plotting Functions
 Functions are used to guarantee that both species' maps have the exact same criteria used. It's also efficient, we can generate all four maps with lesser lines of code. 
-## Occurrence plots
+### Occurrence plots
 
 The `plot_occ` function is used to plot the individual occurrence points, so raw GBIF data, over Australia. We set `size = 0.3` and `alpha = 0.4`. Using a low alpha (transparency) is crucial; it prevents "overplotting" where points stack on top of each other, allowing us to see where sightings are most densely clustered.
 ```R
@@ -298,7 +306,7 @@ plot_occ <- function(
 
   ggplot() +
 
-# Australia background.
+# We draw the Australia background to put the points into.
     geom_sf(
       data = australia,
       fill = "#f8f9fa",
@@ -306,7 +314,7 @@ plot_occ <- function(
       linewidth = 0.2
     ) +
 
-    # Occurrence points.
+    #We draw the points, taking the data from our sf object created before.
     geom_sf(
       data = sf_points,
       color = color_p,
@@ -320,7 +328,7 @@ plot_occ <- function(
         species_label
       )
     ) +
-
+    #We remove the default grey backgorund and grid lines of R, making the map look cleaner. 
     theme_minimal() +
     theme(
       panel.grid = element_blank()
