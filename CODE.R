@@ -10,8 +10,6 @@
 
 - library("ggplot2") #To visualize the occurrence and density in Australia. 
 
-- library("patchwork") #To combine separate plots into a single image. 
-
 -library ("taxize") #to use the backbone function
 
 # 1. Spatial Setup
@@ -338,11 +336,13 @@ p4 <- plot_dens(
   "quokka", 
   "magma")
 
-#We join the created plots in two separate images using patchwork. 
+#Finally, we print the maps
 
-(p1 + p2)
+p1
+p2
+p3
+p4
 
-(p3 + p4)
 
 # 8. Statistical Analysis
 #We compute our Spearman Analysis. We convert our density matrix into a single column vector, so each grid cell becomes a single observation.
