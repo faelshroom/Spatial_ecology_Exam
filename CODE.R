@@ -178,7 +178,7 @@ apply_log_norm <- function(dens_obj) {
 
   dens_obj$v <- (
     dens_obj$v - 
-      min(dens_obj$v, na.rm=TRUE) #true o t?
+      min(dens_obj$v, na.rm=TRUE)
   ) / 
     (
       max(dens_obj$v, na.rm=TRUE) - 
