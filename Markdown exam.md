@@ -254,20 +254,21 @@ The normalization performed is a Min-Max normalization, performed using the form
 $$x_{norm}=\frac{x-min(x)}{max(x)-min(x)}$$ 
 
 ```R
+#We create the Log-Normalization function for our densities, to visualize and compare them better in the plots.
 apply_log_norm <- function(dens_obj) {
-
-# Small offset to avoid log(0).
+#We first create and add a small offset to add to every pixel, to avoid log(0) problem, so every pixel has a value.
+#na.rm ignores any NA values. 
   offset <- max(
     dens_obj$v,
     na.rm = TRUE
   ) / 1000
 
-  # Log transformation.
+  
   dens_obj$v <- log(
     dens_obj$v + offset
   )
 
-  # Min-Max normalization.
+  #We apply a Min-Max scaling for the normalization. Now every value is contained between 1.0 and 0.0 for both density scales. 
   dens_obj$v <- (
     dens_obj$v -
       min(dens_obj$v, na.rm = TRUE)
@@ -280,7 +281,7 @@ apply_log_norm <- function(dens_obj) {
   return(dens_obj)
 }
 
-# Apply the transformation.
+# We apply the transformation to our densities.
 
 cat_dens_log <- apply_log_norm(cat_dens)
 
